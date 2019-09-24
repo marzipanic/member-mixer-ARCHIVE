@@ -296,11 +296,11 @@ function insertGroupFormEventCheckBoxRow(eventList, event) {
 }
 
 function toggleGroupFormHosting() {
-  toggleGroupFormEventStatusSelect("Host");
+  toggleGroupFormEventStatus("Host");
 }
 
 function toggleGroupFormAttendance() {
-  toggleGroupFormEventStatusSelect("Attend");
+  toggleGroupFormEventStatus("Attend");
 }
 
 function toggleGroupFormEventStatus(verb) {
