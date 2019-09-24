@@ -2,6 +2,28 @@
 // ------------------------------------------------------------------------------------------------------
 // DATA FUNCTIONS
 // ------------------------------------------------------------------------------------------------------
+function initializeEventData() {
+  return localStorage.getItem('memberMixer_events') ? 
+  JSON.parse(localStorage.getItem('memberMixer_events')) : 
+  { events: [] };
+}
+
+function clearEventData() {
+  localStorage.setItem('memberMixer_events') = { events: [] };
+}
+
+
+function initializeGroupData() {
+  return localStorage.getItem('memberMixer_groups') ? 
+  JSON.parse(localStorage.getItem('memberMixer_groups')) : 
+  { groups: [] };
+}
+
+function clearGroupData() {
+  localStorage.setItem('memberMixer_groups') = { groups: [] };
+}
+
+
 function getAvailableGroupId() {
 	let availableId = 1;
 	const groupNum = groupData.groups.length;
@@ -183,12 +205,10 @@ function getGroupFormEventAttendance() {
 function getGroupFormEventStatus(verb) {
   let eventList = [];
   if (document.getElementById("groupForm"+verb+"All").checked) {
-    console.log("Can Host Checked");
     for (i = 0; i < eventData.events.length; i++) {
       eventList.push(eventData.events[i].id);
     }
   } else {
-    console.log("Can Host NOT Checked");
     for (i = 0; i < eventData.events.length; i++) {
       if (document.getElementById("can"+verb+"_"+eventData.events[i].id.toString()).checked) {
         eventList.push(eventData.events[i].id);
@@ -196,10 +216,6 @@ function getGroupFormEventStatus(verb) {
     }
   }
   return eventList;
-}
-
-function resetGroupForm() {
-	document.getElementById("groupForm").reset();
 }
 
 function refreshGroupFormEventOptions() {
@@ -314,6 +330,10 @@ function refreshGroupForm(){
   refreshGroupFormEntryLimit();
 }
 
+function resetGroupForm() {
+	document.getElementById("groupForm").reset();
+}
+
 
 // ------------------------------------------------------------------------------------------------------
 // GROUP TABLE FUNCTIONS
@@ -367,7 +387,9 @@ function insertGroupTableRow(tbody, group) {
   insertTableRowOptionToRemove(tr);
 }
 
-
+function resetEventForm() {
+	document.getElementById("groupForm").reset();
+}
 
 
 // ------------------------------------------------------------------------------------------------------
@@ -433,35 +455,15 @@ let dateISO = new Date().toISOString(); //"2011-12-19T15:28:46.493Z"
 
 // Check Local Storage for User Defined Settings
 let maxParticipants = initializeMaxParticipants();
-console.log("Max Participants: ", maxParticipants);
+console.log("Initial Max Participants: ", maxParticipants);
 
-let eventData = localStorage.getItem('memberMixer_events') ? 
-  JSON.parse(localStorage.getItem('memberMixer_events')) : 
-  { events: [] }
-  // { events: [{
-  //     id: 1,
-  //     name: "Example Event",
-  //     datetime: dateISO
-  //   }]
-  // }
-;
-let groupData = localStorage.getItem('memberMixer_groups') ? 
-  JSON.parse(localStorage.getItem('memberMixer_groups')) : 
-  { groups: [] }
-  // { groups: [{
-  //     id: 1,
-  //     name: "Example Group",
-  //     participants: 5,
-  //     //canHostAll: false,
-  //     eventsCanHost: [1,3],
-  //     //canAttendAll: true,
-  //     eventsCanAttend: [1,2,3]
-  //   }]
-  // }
-;
+let eventData = initializeEventData();
+console.log("Initial Event Data: ", eventData);
+
+let groupData = initializeGroupData();
+console.log("Initial Group Data: ", groupData);
 
 
-// Initialize Page
 document.addEventListener("DOMContentLoaded",function(){ // On DOM Ready
   // Register Form Control Listeners
   document.getElementById("groupFormSubmitBtn").addEventListener("click", submitGroupForm);
@@ -469,7 +471,7 @@ document.addEventListener("DOMContentLoaded",function(){ // On DOM Ready
   document.getElementById("groupFormHostAll").addEventListener("change", toggleGroupFormHosting);
   document.getElementById("groupFormAttendAll").addEventListener("change", toggleGroupFormAttendance);
   document.getElementById("eventFormSubmitBtn").addEventListener("click", submitEventForm);
-  document.getElementById("eventFormResetBtn").addEventListener("click", refreshEventForm);
+  document.getElementById("eventFormResetBtn").addEventListener("click", resetEventForm);
   document.getElementById("settingsFormSubmitBtn").addEventListener("click", submitSettingsForm);
   document.getElementById("maxParticipants").addEventListener("input", updateMaxParticipants);
 
