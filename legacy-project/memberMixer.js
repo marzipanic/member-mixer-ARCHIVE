@@ -293,6 +293,10 @@ function insertGroupFormEventCheckBoxRow(eventList, event) {
 
   // Add the new List Item to the List
   eventList.appendChild(liNew);
+
+  // Initialize the Host/Attend checkboxes to checked
+  document.getElementById(hostInput.id).checked = true;
+  document.getElementById(attendInput.id).checked = true;
 }
 
 function toggleGroupFormHosting() {
@@ -306,7 +310,7 @@ function toggleGroupFormAttendance() {
 function toggleGroupFormEventStatus(verb) {
   let allChecked = document.getElementById("groupForm"+verb+"All").checked;
   for (i = 0; i < eventData.events.length; i++) {
-    document.getElementById("can"+verb+"_" + eventData.events[i].id).checked = !allChecked;
+    document.getElementById("can"+verb+"_" + eventData.events[i].id).checked = allChecked;
   }
 }
 
