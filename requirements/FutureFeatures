@@ -1,0 +1,18 @@
+1 - Database Storage for Unique Mixer Series
+    - Retrievable based on link and passcode
+    - Passcode properly (rotating) salted/hashed/etc
+
+2 - Allow Users to Sign up for Unique Mixers, collecting:
+    - Group Name
+    - Group Size
+    - Dates Available to Host
+    - Dates Available to Attend
+    - Email
+
+3 - Automated Emails:
+    - On Sign up, Email participant of their enrollment stats (dates they said they could host, attnend, etc)
+    - 1 Week Prior to Event, send reminder to Host with their Attendees CCed.
+
+- Automated Email Scheduling:
+    - Allow Admins/Hosts/Attendees to determine how often/if they receive email notifications.
+

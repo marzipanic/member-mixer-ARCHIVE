@@ -1,0 +1,74 @@
+Running the app:
+
+In Terminal: 
+cd current-project/client
+npm run serve
+
+In Terminal: 
+cd current-project/server
+npm start
+
+
+Input Data:
+M = Max Number Attendees allowed at a single Gathering
+E[] = Collection of Events (each event can have multiple gatherings)
+	H[] = List of Groups that can Host
+	A[] = List of Groups that can Attend
+G[] = Collection of Groups, each of which contains:
+	P = Number of People in the Group
+
+
+Intermediate Data:
+HW[] = KeyValuePair of Host Weights:
+	Host : Weight
+M[] = Collection of Group Matches, each of which contains:
+    MG[] = The list of Matched Groups
+    MN = The Number of Times they've been matched together
+
+
+Result Data:
+SE[] = Collection of Scheduled Events, each of which contains:
+	AN = Assigned Name
+	AD = Assigned Datetime
+	AG[] = Collection of Assigned Gathering, each of which contains:
+		AH = Assigned Host
+		AA[] = List of Assigned Attendees
+UH[] = Collection of Unscheduled Hosts
+UA[] = Collection of Unscheduled Attendees
+		
+The Algorithm:
+
+Main() {
+    HW[] = GetHostWeights()
+    SE[] = ?
+	For e in E[]:
+        SE[e].AN = e.N
+        SE[e].AD = e.D
+        SE[e].AH = GetHost(e, HW)
+        SE[e].AA = GetAttendees(e)
+
+}
+
+GetInitialHostWeights() {
+	For e in E[]:
+		For g in G[]:
+			if e.H.contains(g): 
+				HW[g] += 1
+				if !e.A.contains(g):
+					HW[g] += 1
+			else HW[g] += 0
+}
+
+GetHost(e) {
+    selectedHost = ?
+    For h in e.H[] {
+        if HW[h] > selectedHost:
+            selectedHost = h
+    }
+    For h in e.H[] {
+        if h == selectedHost:
+            HW[h] = 0
+        else HW[h] += 1 
+    }
+}
+	
