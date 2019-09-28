@@ -5,64 +5,38 @@
 function initializeEventData() {
   return localStorage.getItem('memberMixer_events') ? 
   JSON.parse(localStorage.getItem('memberMixer_events')) : 
-  { events: [] };
+  { 'events': [] };
 }
 
 function clearEventData() {
-  localStorage.setItem('memberMixer_events') = { events: [] };
+  localStorage.setItem('memberMixer_events') = { 'events': [] };
 }
 
 
 function initializeGroupData() {
   return localStorage.getItem('memberMixer_groups') ? 
   JSON.parse(localStorage.getItem('memberMixer_groups')) : 
-  { groups: [] };
+  { 'groups': [] };
 }
 
 function clearGroupData() {
-  localStorage.setItem('memberMixer_groups') = { groups: [] };
+  localStorage.setItem('memberMixer_groups') = { 'groups': [] };
 }
 
-
 function getAvailableGroupId() {
-	let availableId = 1;
-	const groupNum = groupData.groups.length;
-  for (let i = 0; i < groupNum; i++) {
-  	let groupId = groupData.groups[i].id;
-    availableId = availableId <= groupId ? groupId + 1 : availableId;
-	}
-  return availableId;
+	return getAvailableIdForNextObjectKey(groupData.groups);
 }
 
 function getAvailableEventId() {
-	let availableId = 1;
-  for (let i = 0; i < eventData.events.length; i++) {
-  	let eventId = eventData.events[i].id;
-    availableId = availableId <= eventId ? eventId + 1 : availableId;
-	}
+  return getAvailableIdForNextObjectKey(eventData.events);
+}
+
+function getAvailableIdForNextObjectKey(object) {
+  let availableId = 1;
+  Object.keys(object).forEach(keyId => {
+    availableId = availableId <= parseInt(keyId) ? parseInt(keyId) + 1 : availableId;
+  });
   return availableId;
-}
-
-function getAvailableHostGroups(eventId) {
-  let availableGroupCount = 0;
-  for (let i = 0; i < groupData.groups.length; i++) {
-    let group = groupData.group[i];
-    if (group.eventsCanHost.includes(eventId)) {
-      availableGroupCount += groupData.group[i].participants
-    }
-	}
-  return availableGroupCount;
-}
-
-function getAvailableAttendeeGroups(eventId) {
-  let availableGroupCount = 0;
-  for (let i = 0; i < groupData.groups.length; i++) {
-    let group = groupData.group[i];
-    if (group.eventsCanAttend.includes(eventId)) {
-      availableGroupCount += groupData.group[i].participants
-    }
-	}
-  return availableGroupCount;
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -99,12 +73,15 @@ function submitEventForm() {
 	let eventDatetime = new Date(eventDatetimeVal).toISOString();
 
   // Store the data and refresh the view
-  eventData.events.push({ id: availableId, name: eventName, datetime: eventDatetime });
+  eventData.events[availableId] = {
+    name: eventName, 
+    datetime: eventDatetime 
+  };
   console.log(eventData);
 
-  refreshEventForm();
+  resetEventForm();
   refreshEventTable();
-  refreshGroupForm();
+  resetGroupForm();
   refreshGroupTable();
 }
 
@@ -120,8 +97,8 @@ function refreshEventFormEntryLimit(){
   }
 }
 
-function refreshEventForm() {
-  document.getElementById("eventName").value = null;
+function resetEventForm() {
+	document.getElementById("eventName").value = null;
   document.getElementById("eventDatetime").value = new Date().toDatetimeLocal();
   refreshEventFormEntryLimit();
 }
@@ -130,29 +107,27 @@ function refreshEventForm() {
 // EVENT TABLE FUNCTIONS
 // ------------------------------------------------------------------------------------------------------
 // TODO add option to sort event table
-// TODO Add option to remove event
 function refreshEventTable(){
   // Create the new data
   let tbodyNew = document.createElement('tbody');
   const eventNum = eventData.events.length;
-  for (let i = 0; i < eventNum; i++) {
-    let event = eventData.events[i];
-    insertEventTableRow(tbodyNew, event)
-	}
+  Object.keys(eventData.events).forEach(eventId => {
+    insertEventTableRow(tbodyNew, parseInt(eventId), eventData.events[eventId])
+  });
   // Replace old data with new data
   let tbodyOld = document.getElementById("eventTable").tBodies[0];
 	tbodyOld.parentNode.replaceChild(tbodyNew, tbodyOld);
 }
 
-function insertEventTableRow(tbody, event) {
+function insertEventTableRow(tbody, eventId, event) {
   let tr = tbody.insertRow(tbody.rows.length); // <tr>
 
   // Handle ID #
   let tdID = tr.insertCell(tr.cells.length); // <td>
-  let id = document.createTextNode(event.id);
+  let id = document.createTextNode(eventId);
   tdID.appendChild(id);
 
-  // Handle Group Name
+  // Handle Event Name
   let tdName = tr.insertCell(tr.cells.length); // <td>
   let name = document.createTextNode(event.name);
   tdName.appendChild(name);
@@ -164,7 +139,23 @@ function insertEventTableRow(tbody, event) {
   tdDatetime.appendChild(datetime);
 
   // Handle Row Options
-  insertTableRowOptionToRemove(tr);
+  let btn = createAndGetRemoveButton(tr);
+  btn.addEventListener("click", function(){
+    removeEvent(eventId, tr);
+  }, false);
+}
+
+function removeEvent(eventId, tr) {
+  delete eventData.events[eventId];
+  tr.parentNode.removeChild(tr);
+}
+
+function clearEventTable() {
+  let table = document.getElementById("eventTable");
+  let cells = table.getElementsByTagName("td");
+  for (let cell of cells) {
+    table.firstChild.removeChild(cell);
+  }
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -184,13 +175,12 @@ function submitGroupForm() {
   let groupAttendance = getGroupFormEventAttendance();
 
   // Store the data and refresh the view
-  groupData.groups.push({ 
-    id: availableId, 
+  groupData.groups[availableId] = {
     name: groupName, 
     participants: groupParticipants, 
     eventsCanHost: groupHosting, 
     eventsCanAttend: groupAttendance
-  });
+  };
   refreshGroupTable();
 }
 
@@ -205,15 +195,15 @@ function getGroupFormEventAttendance() {
 function getGroupFormEventStatus(verb) {
   let eventList = [];
   if (document.getElementById("groupForm"+verb+"All").checked) {
-    for (i = 0; i < eventData.events.length; i++) {
-      eventList.push(eventData.events[i].id);
-    }
+    Object.keys(eventData.events).forEach(eventId => {
+      eventList.push(parseInt(eventId));
+    });
   } else {
-    for (i = 0; i < eventData.events.length; i++) {
-      if (document.getElementById("can"+verb+"_"+eventData.events[i].id.toString()).checked) {
-        eventList.push(eventData.events[i].id);
+    Object.keys(eventData.events).forEach(eventId => {
+      if (document.getElementById("can"+verb+"_"+eventId).checked) {
+        eventList.push(parseInt(eventId));
       }
-    }
+    });
   }
   return eventList;
 }
@@ -227,14 +217,12 @@ function refreshGroupFormEventOptions() {
   }
 
   // Insert the new data
-  const eventNum = eventData.events.length;
-  for (let i = 0; i < eventNum; i++) {
-    let event = eventData.events[i];
-    insertGroupFormEventCheckBoxRow(eventList, event);
-  }
+  Object.keys(eventData.events).forEach(eventId => {
+    insertGroupFormEventCheckBoxRow(eventList, parseInt(eventId), eventData.events[eventId]);
+  });
 }
 
-function insertGroupFormEventCheckBoxRow(eventList, event) {
+function insertGroupFormEventCheckBoxRow(eventList, eventId, event) {
   // Handle new list Item
   let liNew = document.createElement("li");
   liNew.classList.add("list-group-item");
@@ -245,13 +233,14 @@ function insertGroupFormEventCheckBoxRow(eventList, event) {
   // Handle Event #
   let eventNumDivNew = document.createElement("div");
   eventNumDivNew.classList.add("col-1");
-  eventNumDivNew.innerHTML = event.id;
+  eventNumDivNew.innerHTML = eventId;
   formDivNew.appendChild(eventNumDivNew);
 
   // Handle Event Name
   let eventNameDivNew = document.createElement("div");
   eventNameDivNew.classList.add("col-7");
   eventNameDivNew.innerHTML = event.name;
+  console.log("Event Name: ",event.name);
   formDivNew.appendChild(eventNameDivNew);
 
   // Handle Event "Can Host" Checkbox
@@ -262,11 +251,11 @@ function insertGroupFormEventCheckBoxRow(eventList, event) {
   let hostInput = document.createElement("input");
   hostInput.classList.add("form-check-input");
   hostInput.type = "checkbox";
-  hostInput.id = "canHost_"+event.id;
+  hostInput.id = "canHost_"+eventId;
   // label
   let hostLabel = document.createElement("label");
   hostLabel.classList.add("form-check-label");
-  hostLabel.htmlFor = "canHost_"+event.id;
+  hostLabel.htmlFor = "canHost_"+eventId;
   hostLabel.innerHTML = "Can Host";
   // Combine elements
   eventHostDivNew.appendChild(hostInput);
@@ -280,11 +269,11 @@ function insertGroupFormEventCheckBoxRow(eventList, event) {
   let attendInput = document.createElement("input");
   attendInput.classList.add("form-check-input");
   attendInput.type = "checkbox";
-  attendInput.id = "canAttend_"+event.id;
+  attendInput.id = "canAttend_"+eventId;
   // label
   let attendLabel = document.createElement("label");
   attendLabel.classList.add("form-check-label");
-  attendLabel.htmlFor = "canAttend_"+event.id;
+  attendLabel.htmlFor = "canAttend_"+eventId;
   attendLabel.innerHTML = "Can Attend";
   // Combine elements
   eventAttendDivNew.appendChild(attendInput);
@@ -327,15 +316,11 @@ function refreshGroupFormEntryLimit(){
   }
 }
 
-function refreshGroupForm(){
+function resetGroupForm(){
   //refreshGroupFormAttendSelect();
   //refreshGroupFormHostSelect();
   refreshGroupFormEventOptions();
   refreshGroupFormEntryLimit();
-}
-
-function resetGroupForm() {
-	document.getElementById("groupForm").reset();
 }
 
 
@@ -347,22 +332,21 @@ function resetGroupForm() {
 function refreshGroupTable(){
   // Create the new data
   let tbodyNew = document.createElement("tbody");
-  const groupNum = groupData.groups.length;
-  for (let i = 0; i < groupNum; i++) {
-    let group = groupData.groups[i];
-    insertGroupTableRow(tbodyNew, group);
-	}
+  Object.keys(groupData.groups).forEach(groupId => {
+    insertGroupTableRow(tbodyNew, groupId, groupData.groups[groupId]);
+  });
+
   // Replace old data with new data
   let tbodyOld = document.getElementById("groupTable").tBodies[0];
 	tbodyOld.parentNode.replaceChild(tbodyNew, tbodyOld); // Replace with new data
 }
 
-function insertGroupTableRow(tbody, group) {
+function insertGroupTableRow(tbody, groupId, group) {
   let tr = tbody.insertRow(tbody.rows.length); // <tr>
 
   // Handle ID #
   let tdID = tr.insertCell(tr.cells.length); // <td>
-  let id = document.createTextNode(group.id);
+  let id = document.createTextNode(groupId);
   tdID.appendChild(id);
 
   // Handle Group Name
@@ -388,18 +372,30 @@ function insertGroupTableRow(tbody, group) {
   tdAttend.appendChild(attendingNode);
 
   // Handle Options
-  insertTableRowOptionToRemove(tr);
+  let btn = createAndGetRemoveButton(tr);
+  btn.addEventListener("click", function(){
+    removeGroup(groupId, tr);
+  }, false);
 }
 
-function resetEventForm() {
-	document.getElementById("groupForm").reset();
+function removeGroup(groupId, tr) {
+  delete groupData.groups[groupId];
+  tr.parentNode.removeChild(tr);
+}
+
+function clearGroupTable() {
+  let table = document.getElementById("groupTable");
+  let cells = table.getElementsByTagName("td");
+  for (let cell of cells) {
+    table.firstChild.removeChild(cell);
+  }
 }
 
 
 // ------------------------------------------------------------------------------------------------------
 // GENERIC TABLE FUNCTIONS
 // ------------------------------------------------------------------------------------------------------
-function insertTableRowOptionToRemove(tr) {
+function createAndGetRemoveButton(tr) {
   // TODO generate remove button id and logic
   let tdOptions = tr.insertCell(tr.cells.length); // <td>
   tdOptions.classList.add("text-right");
@@ -414,25 +410,105 @@ function insertTableRowOptionToRemove(tr) {
 
   removeBtn.appendChild(removeIcon);
   tdOptions.appendChild(removeBtn);
+  return removeBtn;
 }
 
 // ------------------------------------------------------------------------------------------------------
 // SCHEDULING ALGORITHM
 // ------------------------------------------------------------------------------------------------------
-function generateSchedule() {
-  // TODO finish schedule algorithm
-  let hostInfo = { groups: [{ }] };
-  let relationships = { groups: [{ }] };
-  let counts = { participants: 0, availableParticipants: 0 };
+function generateItinerary() {
+// TODO finish schedule algorithm
+  console.log("Generating Itinerary...");
 
-  for (let i = 0; i < groupData.length; i++) {
-  	counts.participants += groupData.group[i].participants;
-    if (groupData.group[i].some(e => e.name === 'Magenic')) {
-      counts.availableParticipants += groupData.group[i].participants
+  let hostWeights = getInitialHostWeights();
+  let attendeeWeights = getInitialAttendeeWeights();
+  Object.keys(eventData.events).forEach(eventId => {
+
+    // Get Initial Numbers
+    let availableHosts = getAvailableHosts(eventId);
+    let availableAttendees = getAvailableAttendees(eventId);
+    let participantCount = getParticipantCount(availableHosts, availableAttendees);
+    let minimumHostCount = Math.ceil(participantCount / maxParticipants);
+
+    // Make Initial Assignments
+    let sortedHosts = getSortedHosts(availableHosts, hostWeights);
+    let sortedAttendees = getSortedAttendees(availableAttendees, attendeeWeights);
+
+    // Loop Through
+  })
+  console.log("Generated.");
+ }
+
+function getInitialHostWeights() {
+  let weights = {}
+  Object.keys(groupData.groups).forEach(groupId => {
+    if (groupData.groups[groupId].eventsCanHost.length > 0) {
+      let eventCount = eventData.events.length;
+      let hostableEventCount = groupData.groups[groupId].eventsCanHost.length;
+      weights[groupId] = eventCount - hostableEventCount;
     }
-	}
-  return availableId;
-  //let participantCount =
+  })
+  console.log("Initial Host Weights: ", weights);
+  return weights;
+}
+
+function getInitialAttendeeWeights() {
+  let weights = {}
+  Object.keys(groupData.groups).forEach(groupId => {
+    if (groupData.groups[groupId].eventsCanHost.length > 0) {
+      let eventCount = eventData.events.length;
+      let attendingEventCount = groupData.groups[groupId].eventsCanAttend.length;
+      weights[groupId] = eventCount - attendingEventCount;
+    }
+  })
+  console.log("Initial Attendee Weights: ", weights);
+  return weights;
+}
+
+function getAvailableHosts(eventId) {
+  let availableHosts = [];
+  Object.keys(groupData.groups).forEach(group => {
+    if (groupData.groups[group].eventsCanHost.includes(eventId)) {
+      availableHosts.push(group);
+    }
+  });
+  console.log("Available Hosts: ", availableHosts);
+  return availableHosts;
+}
+
+function getSortedHosts(hostWeights) {
+  // Order hosts by:
+    // Can ONLY Host, not attend
+    // Greatest Host Weight
+    // Group Size
+}
+
+function getAvailableAttendees(eventId) {
+  let availableAttendees = [];
+  Object.keys(groupData.groups).forEach(group => {
+    if (groupData.groups[group].eventsCanAttend.includes(eventId)) {
+      availableAttendees.push(group);
+    }
+  });
+  return availableAttendees;
+}
+
+function getSortedAttendees(attendeeWeights) {
+  // Order attendees by:
+    // Can ONLY Attend, not attend
+    // Greatest Host Weight
+    // Group Size
+}
+
+function getParticipantCount(availableHosts, availableAttendees) {
+  let participantCount = 0
+  Object.keys(groupData.groups).forEach(group => {
+    if (availableHosts.includes(group) || availableAttendees.includes(group)) {
+      participantCount += groupData.groups[group].participants;
+    }
+  });
+  console.log("Participant Count: ", participantCount);
+  return participantCount;
 }
 
 function refreshSchedule() {
@@ -444,10 +520,6 @@ function refreshSchedule() {
 // GENERATE SCHEDULE
 // ------------------------------------------------------------------------------------------------------
 
-function submitSettingsForm() {
-  generateSchedule();
-  refreshSchedule();
-}
 
 
 
@@ -476,12 +548,12 @@ document.addEventListener("DOMContentLoaded",function(){ // On DOM Ready
   document.getElementById("groupFormAttendAll").addEventListener("change", toggleGroupFormAttendance);
   document.getElementById("eventFormSubmitBtn").addEventListener("click", submitEventForm);
   document.getElementById("eventFormResetBtn").addEventListener("click", resetEventForm);
-  document.getElementById("settingsFormSubmitBtn").addEventListener("click", submitSettingsForm);
   document.getElementById("maxParticipants").addEventListener("input", updateMaxParticipants);
+  document.getElementById("generateItineraryBtn").addEventListener("click", generateItinerary);
 
   // Update tables with default data
   refreshEventTable();
-  refreshEventForm();
+  resetEventForm();
   refreshGroupTable();
-  refreshGroupForm();
+  resetGroupForm();
 });
