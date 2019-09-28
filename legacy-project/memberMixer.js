@@ -148,6 +148,8 @@ function insertEventTableRow(tbody, eventId, event) {
 function removeEvent(eventId, tr) {
   delete eventData.events[eventId];
   tr.parentNode.removeChild(tr);
+  let groupFormItem = document.getElementById("groupForm_event_"+eventId);
+  groupFormItem.parentElement.removeChild(groupFormItem);
 }
 
 function clearEventTable() {
@@ -174,13 +176,15 @@ function submitGroupForm() {
   let groupHosting = getGroupFormEventHosting();
   let groupAttendance = getGroupFormEventAttendance();
 
-  // Store the data and refresh the view
+  // Store the data
   groupData.groups[availableId] = {
     name: groupName, 
     participants: groupParticipants, 
     eventsCanHost: groupHosting, 
     eventsCanAttend: groupAttendance
   };
+
+  // Refresh the view
   refreshGroupTable();
 }
 
@@ -226,6 +230,7 @@ function insertGroupFormEventCheckBoxRow(eventList, eventId, event) {
   // Handle new list Item
   let liNew = document.createElement("li");
   liNew.classList.add("list-group-item");
+  liNew.id = "groupForm_event_"+eventId;
   let formDivNew = document.createElement("div");
   formDivNew.classList.add("form-row");
   liNew.appendChild(formDivNew);
@@ -246,7 +251,6 @@ function insertGroupFormEventCheckBoxRow(eventList, eventId, event) {
   // Handle Event "Can Host" Checkbox
   let eventHostDivNew = document.createElement("div");
   eventHostDivNew.classList.add("col-2");
-  
   // input
   let hostInput = document.createElement("input");
   hostInput.classList.add("form-check-input");
@@ -284,25 +288,42 @@ function insertGroupFormEventCheckBoxRow(eventList, eventId, event) {
   eventList.appendChild(liNew);
 
   // Initialize the Host/Attend checkboxes to checked
-  document.getElementById(hostInput.id).checked = true;
-  document.getElementById(attendInput.id).checked = true;
+  // let hostCheckbox = document.getElementById(hostInput.id)
+  // let attendCheckbox = document.getElementById(attendInput.id)
+  hostInput.checked = true;
+  attendInput.checked = true;
+
+  // Add Event Listeners
+  hostInput.addEventListener("click", function(){
+    uncheckGroupFormAllCheck("Host");
+  }, false);
+  attendInput.addEventListener("click", function(){
+    uncheckGroupFormAllCheck("Attend");
+  }, false);
 }
 
+// Toggle "Host All"
 function toggleGroupFormHosting() {
   toggleGroupFormEventStatus("Host");
 }
-
+// Toggle "Attend All"
 function toggleGroupFormAttendance() {
   toggleGroupFormEventStatus("Attend");
 }
-
+// Toggle Host/Attend Checkboxes
 function toggleGroupFormEventStatus(verb) {
   let allChecked = document.getElementById("groupForm"+verb+"All").checked;
-  for (i = 0; i < eventData.events.length; i++) {
-    document.getElementById("can"+verb+"_" + eventData.events[i].id).checked = allChecked;
-  }
+  Object.keys(eventData.events).forEach(eventId => {
+    document.getElementById("can"+verb+"_"+eventId).checked = allChecked;
+  });
 }
-
+function uncheckGroupFormAllCheck(verb) {
+  console.log("Set Checkbox False: ", verb)
+  document.getElementById("groupForm"+verb+"All").checked = false;
+}
+function checkGroupFormAllCheck(verb) {
+  document.getElementById("groupForm"+verb+"All").checked = true;
+}
 
 function refreshGroupFormEntryLimit(){
   let alert = document.getElementById("groupAlert");
@@ -321,6 +342,8 @@ function resetGroupForm(){
   //refreshGroupFormHostSelect();
   refreshGroupFormEventOptions();
   refreshGroupFormEntryLimit();
+  checkGroupFormAllCheck("Host");
+  checkGroupFormAllCheck("Attend");
 }
 
 
