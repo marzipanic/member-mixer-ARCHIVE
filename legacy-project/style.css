@@ -1,3 +1,16 @@
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+.content {
+    flex: 1;
+    padding: 20px;
+}
+.footer {
+    padding: 20px;
+}
+
 ul {
     list-style-type: disc !important;
     padding-left: 1em;
